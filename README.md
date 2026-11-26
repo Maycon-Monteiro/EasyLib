@@ -4,8 +4,6 @@
 
 **LIBRAS, a segunda língua oficial do Brasil**
 
-<br/>
-
 </div>
 
 ---
