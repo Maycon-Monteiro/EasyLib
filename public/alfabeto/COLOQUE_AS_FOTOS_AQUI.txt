@@ -1,0 +1,11 @@
+Coloque aqui as fotos ou vídeos curtos do alfabeto manual em Libras (A até Z e Ç).
+
+Como nomear os arquivos:
+- A.png (ou A.jpg, A.jpeg, A.webp, A.mp4)
+- B.png
+- ...
+- Z.png
+- Ç.png
+
+O aplicativo detecta e carrega automaticamente qualquer arquivo salvo nesta pasta `/public/alfabeto/` nas atividades de datilologia (soletração manual).
+Você também pode definir URLs externas manualmente em `URLS_ALFABETO_REAIS` dentro de `src/data/librasCatalog255.ts`.

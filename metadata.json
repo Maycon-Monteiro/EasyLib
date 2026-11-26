@@ -1,0 +1,10 @@
+{
+  "name": "EasyLib",
+  "description": "Aplicativo de aprendizado e tradução de Libras com IA em tempo real, mentoria voluntária, expressões faciais NMF, práticas guiadas e gamificação estilo Duolingo.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

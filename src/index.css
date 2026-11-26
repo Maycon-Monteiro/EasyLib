@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Fredoka', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Light Mode Palette (Warm Cream + Libi Teal + Orange) */
+  --easylib-canvas: #FAF9F6;
+  --easylib-surface: #FFFFFF;
+  --easylib-surface-subtle: #F3F0EA;
+  --easylib-border: #E8E2D9;
+  --easylib-border-lip: #D6CFC5;
+
+  --easylib-orange: #EA580C;
+  --easylib-orange-hover: #DC4F06;
+  --easylib-orange-lip: #9A3412;
+  --easylib-orange-soft: #FFF1E6;
+  --easylib-orange-border: #FED7AA;
+
+  --easylib-teal: #0D9488;
+  --easylib-teal-dark: #0F766E;
+  --easylib-teal-soft: #F0FDFA;
+  --easylib-teal-border: #99F6E4;
+
+  --easylib-ink: #1C1917;
+  --easylib-ink-muted: #57534E;
+  --easylib-ink-subtle: #78716C;
+
+  --easylib-danger-soft: #FFF1F2;
+  --easylib-danger-border: #FECDD3;
+  --easylib-danger-ink: #BE123C;
+  --easylib-amber-soft: #FEF3C7;
+}
+
+:root[data-theme="dark"] {
+  /* Dark Mode Palette (Low-Eye-Strain Slate Charcoal + Soft Off-White) */
+  --easylib-canvas: #131619;
+  --easylib-surface: #1B1F24;
+  --easylib-surface-subtle: #232830;
+  --easylib-border: #303640;
+  --easylib-border-lip: #0D0F12;
+
+  --easylib-orange: #F97316;
+  --easylib-orange-hover: #EA580C;
+  --easylib-orange-lip: #9A3412;
+  --easylib-orange-soft: #2A1B12;
+  --easylib-orange-border: #5C341A;
+
+  --easylib-teal: #14B8A6;
+  --easylib-teal-dark: #2DD4BF;
+  --easylib-teal-soft: #122927;
+  --easylib-teal-border: #1F4E49;
+
+  --easylib-ink: #EAE7E0;
+  --easylib-ink-muted: #B6B1A8;
+  --easylib-ink-subtle: #8C887F;
+
+  --easylib-danger-soft: #2D161C;
+  --easylib-danger-border: #5E2332;
+  --easylib-danger-ink: #FDA4AF;
+  --easylib-amber-soft: #2B2412;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--easylib-canvas);
+  color: var(--easylib-ink);
+  scroll-behavior: smooth;
+  overflow-x: clip;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+body {
+  background-color: var(--easylib-canvas);
+  color: var(--easylib-ink);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+/* Automatic CSS-Variable Theme Mapping for Tailwind Neutral Surface/Ink Utilities in Dark Mode */
+:root[data-theme="dark"] .bg-\[\#FAF9F6\],
+:root[data-theme="dark"] .bg-\[\#FAF9F6\]\/95 {
+  background-color: var(--easylib-canvas) !important;
+}
+
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-white\/95 {
+  background-color: var(--easylib-surface) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#F3F0EA\],
+:root[data-theme="dark"] .bg-\[\#F3F0EA\]\/60 {
+  background-color: var(--easylib-surface-subtle) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#E8E2D9\] {
+  background-color: var(--easylib-border) !important;
+}
+
+:root[data-theme="dark"] .border-\[\#E8E2D9\],
+:root[data-theme="dark"] .divide-\[\#E8E2D9\] > :not(:last-child),
+:root[data-theme="dark"] .divide-\[\#F3F0EA\] > :not(:last-child) {
+  border-color: var(--easylib-border) !important;
+}
+
+:root[data-theme="dark"] .border-b-\[\#D6CFC5\] {
+  border-bottom-color: var(--easylib-border-lip) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#1C1917\] {
+  color: var(--easylib-ink) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#57534E\] {
+  color: var(--easylib-ink-muted) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#78716C\] {
+  color: var(--easylib-ink-subtle) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#F0FDFA\] {
+  background-color: var(--easylib-teal-soft) !important;
+}
+
+:root[data-theme="dark"] .border-\[\#99F6E4\] {
+  border-color: var(--easylib-teal-border) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#0F766E\],
+:root[data-theme="dark"] .text-\[\#115E59\] {
+  color: var(--easylib-teal-dark) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#FFF1E6\] {
+  background-color: var(--easylib-orange-soft) !important;
+}
+
+:root[data-theme="dark"] .border-\[\#FED7AA\] {
+  border-color: var(--easylib-orange-border) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#9A3412\],
+:root[data-theme="dark"] .text-\[\#C2410C\],
+:root[data-theme="dark"] .text-\[\#431407\] {
+  color: #FDBA74 !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#FFF1F2\],
+:root[data-theme="dark"] .bg-rose-50 {
+  background-color: var(--easylib-danger-soft) !important;
+}
+
+:root[data-theme="dark"] .border-\[\#FECDD3\] {
+  border-color: var(--easylib-danger-border) !important;
+}
+
+:root[data-theme="dark"] .text-\[\#BE123C\] {
+  color: var(--easylib-danger-ink) !important;
+}
+
+:root[data-theme="dark"] .bg-\[\#FEF3C7\] {
+  background-color: var(--easylib-amber-soft) !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#F3F0EA\]:hover,
+:root[data-theme="dark"] .hover\:bg-\[\#FAF9F6\]:hover {
+  background-color: var(--easylib-surface-subtle) !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-\[\#F0FDFA\]:hover {
+  background-color: var(--easylib-teal-soft) !important;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  background-color: var(--easylib-surface-subtle);
+  color: var(--easylib-ink);
+  border-color: var(--easylib-border);
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+main p:not(.text-center):not(.text-right):not(.truncate):not(.line-clamp-1) {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* Tactile button & node press feel */
+.tactile-btn {
+  transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.tactile-btn:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-in {
+  animation: popIn 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scale-in,
+  .animate-fade-in,
+  .tactile-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Hide horizontal scrollbar cleanly where arrows are provided */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
