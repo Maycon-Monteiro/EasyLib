@@ -1,20 +1,47 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+
+# EasyLib
+
+**LIBRAS, a segunda língua oficial do Brasil**
+
+<br/>
+
+![TypeScript](https://shields.io)
+![JavaScript](https://shields.io)
+![Node.js](https://shields.io)
+
 </div>
 
-# Run and deploy your AI Studio app
+---
 
-This contains everything you need to run your app locally.
+### Visão Geral
 
-View your app in AI Studio: https://ai.studio/apps/35ac68ae-7bd4-4a52-9278-6030c553d980
+> O **EasyLib** é uma plataforma educacional focada no ensino de LIBRAS (Língua Brasileira de Sinais). O aplicativo combina lições interativas com reconhecimento gestual por câmera para verificar os sinais feitos pelo usuário em tempo real.
 
-## Run Locally
+<br/>
 
-**Prerequisites:**  Node.js
+### Principais Funcionalidades
 
+| Recurso | Descrição |
+| :--- | :--- |
+| **Câmera AI** | Verificação e correção em tempo real dos sinais realizados pelo usuário através da câmera. |
+| **Aprendizagem Interativa** | Trilha de lições e exercícios práticos focados no vocabulário e na comunicação em LIBRAS. |
+| **Ranking entre Amigos** | Sistema de grupos e pontuação para acompanhar o progresso e competir de forma saudável com amigos. |
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+<br/>
+
+### Demonstração
+
+<div align="center">
+  <!-- Quando tiver uma imagem ou GIF do app, arraste o arquivo direto para o editor do README no GitHub e substitua o link abaixo -->
+  <img src="[LINK-OU-CAMINHO-DA-IMAGEM]" alt="Preview do EasyLib" width="100%" />
+</div>
+
+---
+
+<div align="center">
+
+**© 2026 Maycon Monteiro — Todos os direitos reservados.**  
+<sub>Este código-fonte é disponibilizado apenas para visualização e portfólio. Não é permitida a cópia, modificação ou distribuição sem autorização expressa.</sub>
+
+</div>
