@@ -6,10 +6,6 @@
 
 <br/>
 
-![TypeScript](https://shields.io)
-![JavaScript](https://shields.io)
-![Node.js](https://shields.io)
-
 </div>
 
 ---
@@ -34,7 +30,7 @@
 
 <div align="center">
   <!-- Quando tiver uma imagem ou GIF do app, arraste o arquivo direto para o editor do README no GitHub e substitua o link abaixo -->
-  <img src="[LINK-OU-CAMINHO-DA-IMAGEM]" alt="Preview do EasyLib" width="100%" />
+  <img src="Screenshot 2026-11-26 20.00.29.png" alt="Preview do EasyLib" width="100%" />
 </div>
 
 ---
