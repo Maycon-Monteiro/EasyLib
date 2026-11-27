@@ -169,8 +169,8 @@ export const CameraStudioView: React.FC<CameraStudioViewProps> = ({
 
   // Recognition & Calibration states
   const [isTranslating, setIsTranslating] = useState<boolean>(true);
-  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(80);
-  const [holdDurationMs, setHoldDurationMs] = useState<number>(800);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(74);
+  const [holdDurationMs, setHoldDurationMs] = useState<number>(700);
   const [showCalibration, setShowCalibration] = useState<boolean>(false);
 
   const [evaluation, setEvaluation] = useState<RecognitionEvaluation>({

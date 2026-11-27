@@ -77,6 +77,7 @@ let faceLandmarker: FaceLandmarker | null = null;
 let lastHandTs = 0;
 let lastFaceTs = 0;
 let lastFaceInferMs = 0;
+let lastValidFaceMs = 0;
 let cachedFaceRes: FaceLandmarkerResult | undefined;
 let recentSamples: RecentHandSample[] = [];
 let activeTarget: TargetLandmarks | null = null;
@@ -110,6 +111,7 @@ function disposeModels() {
   }
   faceLandmarker = null;
   cachedFaceRes = undefined;
+  lastValidFaceMs = 0;
   recentSamples = [];
   phaseTracker = createPhaseTrackerState();
   isPaused = false;
@@ -234,6 +236,7 @@ workerScope.onmessage = async (event: MessageEvent<WorkerInMessage>) => {
     recentSamples = [];
     phaseTracker = createPhaseTrackerState();
     cachedFaceRes = undefined;
+    lastValidFaceMs = 0;
     isPaused = false;
     const nextHands = msg.target.twoHanded === 2 ? 2 : 1;
     if (handLandmarker && currentNumHands !== nextHands) {
@@ -294,12 +297,19 @@ workerScope.onmessage = async (event: MessageEvent<WorkerInMessage>) => {
         const faceTs = Math.max(Math.round(timestampMs), lastFaceTs + 1);
         lastFaceTs = faceTs;
         try {
-          cachedFaceRes = faceLandmarker.detectForVideo(bitmap, faceTs);
+          const nextFace = faceLandmarker.detectForVideo(bitmap, faceTs);
+          if (nextFace.faceLandmarks && nextFace.faceLandmarks.length > 0) {
+            cachedFaceRes = nextFace;
+            lastValidFaceMs = timestampMs;
+          } else if (timestampMs - lastValidFaceMs > 2500) {
+            cachedFaceRes = undefined;
+          }
         } catch {
           // Retain cached face result on transient failure
         }
       } else if (!needsFace) {
         cachedFaceRes = undefined;
+        lastValidFaceMs = 0;
       }
 
       const primaryLm = handRes?.landmarks?.[0];

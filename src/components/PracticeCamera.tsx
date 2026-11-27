@@ -45,7 +45,8 @@ export type CameraDetectionState =
   | 'validated'
   | 'paused';
 
-const HOLD_CONFIRMATION_MS = 1250;
+const HOLD_CONFIRMATION_MS = 850;
+const HOLD_FLICKER_GRACE_MS = 220;
 const WASM_CDN_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm';
 const HAND_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -187,11 +188,13 @@ export const PracticeCamera = ({
   const fallbackLastFaceTsRef = useRef<number>(0);
   const fallbackLastFaceInferMsRef = useRef<number>(0);
   const fallbackCachedFaceRef = useRef<FaceLandmarkerResult | undefined>(undefined);
+  const fallbackLastValidFaceMsRef = useRef<number>(0);
   const fallbackRecentSamplesRef = useRef<RecentHandSample[]>([]);
   const fallbackPhaseTrackerRef = useRef<PhaseTrackerState>(createPhaseTrackerState());
   const lastFrameDispatchMsRef = useRef<number>(0);
 
   const passTimerStartRef = useRef<number | null>(null);
+  const lastPassTimestampRef = useRef<number>(0);
   const hasPassedRef = useRef<boolean>(false);
   const detectionPausedRef = useRef<boolean>(false);
   const lastUiUpdateMsRef = useRef<number>(0);
@@ -307,6 +310,7 @@ export const PracticeCamera = ({
         if (passTimerStartRef.current === null) {
           passTimerStartRef.current = timestampMs;
         }
+        lastPassTimestampRef.current = timestampMs;
         const elapsed = timestampMs - passTimerStartRef.current;
         const pct = Math.min(100, Math.round((elapsed / HOLD_CONFIRMATION_MS) * 100));
 
@@ -329,11 +333,21 @@ export const PracticeCamera = ({
           setValidation(nextValidation);
         }
       } else {
-        passTimerStartRef.current = null;
+        const withinGrace =
+          passTimerStartRef.current !== null &&
+          nextValidation.detectedHands &&
+          nextValidation.qualityPercent >= 62 &&
+          timestampMs - lastPassTimestampRef.current <= HOLD_FLICKER_GRACE_MS;
+
+        if (!withinGrace) {
+          passTimerStartRef.current = null;
+        }
         if (timestampMs - lastUiUpdateMsRef.current >= 80) {
           lastUiUpdateMsRef.current = timestampMs;
-          setDetectionState('detecting');
-          setHoldProgressPercent(0);
+          setDetectionState(withinGrace ? 'holding' : 'detecting');
+          if (!withinGrace) {
+            setHoldProgressPercent(0);
+          }
           setValidation(nextValidation);
         }
       }
@@ -707,15 +721,22 @@ export const PracticeCamera = ({
               try {
                 const faceTs = Math.max(Math.round(nowMs), fallbackLastFaceTsRef.current + 1);
                 fallbackLastFaceTsRef.current = faceTs;
-                fallbackCachedFaceRef.current = fallbackFaceRef.current.detectForVideo(
+                const nextFace = fallbackFaceRef.current.detectForVideo(
                   currentVideo,
                   faceTs
                 );
+                if (nextFace.faceLandmarks && nextFace.faceLandmarks.length > 0) {
+                  fallbackCachedFaceRef.current = nextFace;
+                  fallbackLastValidFaceMsRef.current = nowMs;
+                } else if (nowMs - fallbackLastValidFaceMsRef.current > 2500) {
+                  fallbackCachedFaceRef.current = undefined;
+                }
               } catch {
                 // Keep cached face result
               }
             } else if (!needsFace) {
               fallbackCachedFaceRef.current = undefined;
+              fallbackLastValidFaceMsRef.current = 0;
             }
 
             const primaryLm = handRes?.landmarks?.[0];
@@ -831,9 +852,9 @@ export const PracticeCamera = ({
 
   const qualityColor = isValidated
     ? 'bg-[#16A34A]'
-    : validation.qualityPercent >= 80
+    : validation.qualityPercent >= 74
     ? 'bg-[#0D9488]'
-    : validation.qualityPercent >= 55
+    : validation.qualityPercent >= 52
     ? 'bg-[#EA580C]'
     : 'bg-[#D97706]';
 
@@ -1038,8 +1059,8 @@ export const PracticeCamera = ({
 
           <div className="flex items-center justify-between text-xs font-bold tabular-nums">
             <span className="text-[#1C1917]">Precisão em {targetSign.palavra}</span>
-            <span className={isValidated ? 'text-[#15803D]' : validation.qualityPercent >= 80 ? 'text-[#0F766E]' : 'text-[#EA580C]'}>
-              {confirmedQuality ?? validation.qualityPercent}% · Meta 80% (1,2s)
+            <span className={isValidated ? 'text-[#15803D]' : validation.qualityPercent >= 74 ? 'text-[#0F766E]' : 'text-[#EA580C]'}>
+              {confirmedQuality ?? validation.qualityPercent}% · Meta 74% (0,9s)
             </span>
           </div>
 
@@ -1050,8 +1071,8 @@ export const PracticeCamera = ({
             />
             <div
               className="absolute top-0 bottom-0 w-0.5 bg-[#1C1917]/30"
-              style={{ left: '80%' }}
-              title="Meta mínima: 80%"
+              style={{ left: '74%' }}
+              title="Meta mínima: 74%"
             />
           </div>
 

@@ -274,10 +274,10 @@ function scoreLocation(
       if (spec.id === 'eu') return idxVec.z > 0.15 ? 0.8 : 0.2;
       if (spec.id === 'voce') return idxVec.z < -0.22 ? 0.8 : 0.2;
     }
-    return 0.65;
+    return 0.78;
   }
 
-  return 0.15;
+  return 0.30;
 }
 
 function scoreMovementAndDtw(
@@ -537,9 +537,9 @@ export function evaluateMultimodalLibrasSign(
     const consistencyScore = scoreTemporalConsistencyAndNmf(buffer, latest, spec);
 
     let overall =
-      handshapeScore * 0.32 +
+      handshapeScore * 0.34 +
       orientationScore * 0.14 +
-      locationScore * 0.22 +
+      locationScore * 0.20 +
       movementScore * 0.24 +
       consistencyScore * 0.08;
 
@@ -549,13 +549,13 @@ export function evaluateMultimodalLibrasSign(
     }
 
     let failureReason = '';
-    if (handshapeScore < 0.64) {
+    if (handshapeScore < 0.62) {
       overall = Math.min(overall, 0.54);
       failureReason = `Ajuste a configuração de mão para "${spec.name}".`;
     } else if (orientationScore < 0.45) {
       overall = Math.min(overall, 0.64);
       failureReason = `Ajuste a orientação da palma para "${spec.name}".`;
-    } else if (locationScore < 0.50) {
+    } else if (locationScore < 0.45) {
       overall = Math.min(overall, 0.56);
       failureReason = `Posicione a mão em: ${spec.articulationLocationLabel}.`;
     } else if (spec.requiresMotion && movementScore < 0.54) {

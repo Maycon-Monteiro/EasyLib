@@ -228,7 +228,15 @@ sw.addEventListener('push', (event: SWPushEvent) => {
     vibrate: [140, 70, 140],
   };
 
-  event.waitUntil(sw.registration.showNotification(title, options));
+  event.waitUntil(
+    sw.registration.showNotification(title, options).catch(() =>
+      sw.registration.showNotification(title, {
+        body,
+        icon: '/pwa-192x192.png',
+        data: { url: targetUrl },
+      })
+    )
+  );
 });
 
 // Automatically sync rotated push subscriptions when browser refreshes keys

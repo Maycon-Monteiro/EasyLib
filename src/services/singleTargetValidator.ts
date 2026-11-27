@@ -62,18 +62,18 @@ function getZoneTip(zone: TargetArticulationZone): string {
   }
 }
 
-export const SINGLE_TARGET_PASS_THRESHOLD = 80;
+export const SINGLE_TARGET_PASS_THRESHOLD = 74;
 
 function scoreSingleHandshape(
   geo: HandGeometryFeatures,
   target: TargetLandmarks,
   forgiving = true
 ): { score: number; fingerTip: string | null } {
-  const thumbMargin = forgiving ? 0.25 : 0.21;
-  const fingerMargin = forgiving ? 0.22 : 0.19;
-  const thumbDistMargin = forgiving ? 0.28 : 0.24;
-  const minDistMargin = forgiving ? 0.28 : 0.24;
-  const spreadMargin = forgiving ? 10 : 8;
+  const thumbMargin = forgiving ? 0.28 : 0.23;
+  const fingerMargin = forgiving ? 0.25 : 0.21;
+  const thumbDistMargin = forgiving ? 0.30 : 0.25;
+  const minDistMargin = forgiving ? 0.30 : 0.25;
+  const spreadMargin = forgiving ? 12 : 9;
 
   const thumbScore = scoreRange(geo.fingers.thumb.extensionScore, target.fingers.thumb, thumbMargin);
   const indexScore = scoreRange(geo.fingers.index.extensionScore, target.fingers.index, fingerMargin);
@@ -108,8 +108,8 @@ function scoreSingleHandshape(
 
   if (penalties.length > 0) {
     const constraintAvg = penalties.reduce((acc, v) => acc + v, 0) / penalties.length;
-    fingerWeighted = fingerWeighted * 0.70 + constraintAvg * 0.30;
-    if (constraintAvg < 0.42) {
+    fingerWeighted = fingerWeighted * 0.72 + constraintAvg * 0.28;
+    if (constraintAvg < 0.38) {
       fingerWeighted = Math.min(fingerWeighted, 0.56);
     }
   }
@@ -119,14 +119,14 @@ function scoreSingleHandshape(
   const minCore = thumbStrict
     ? Math.min(thumbScore, indexScore, middleScore, ringScore, pinkyScore)
     : Math.min(indexScore, middleScore, ringScore, pinkyScore);
-  if (minCore < 0.32) {
+  if (minCore < 0.30) {
     fingerWeighted = Math.min(fingerWeighted, 0.44);
-  } else if (minCore < 0.52) {
-    fingerWeighted = Math.min(fingerWeighted, 0.64);
+  } else if (minCore < 0.48) {
+    fingerWeighted = Math.min(fingerWeighted, 0.62);
   }
 
   let fingerTip: string | null = null;
-  if (fingerWeighted < 0.78) {
+  if (fingerWeighted < 0.74) {
     const fingerScores: Array<[string, number]> = [
       ['polegar', thumbScore],
       ['indicador', indexScore],
@@ -151,8 +151,10 @@ function scoreArticulationZone(
   const wristPt = geo.landmarks[0] || handPt;
   const indexTip = geo.landmarks[8] || handPt;
   const middleTip = geo.landmarks[12] || handPt;
+  const thumbTip = geo.landmarks[4] || handPt;
   const probeY = (handPt.y + wristPt.y) * 0.5;
   const probeX = (handPt.x + wristPt.x) * 0.5;
+  const probePt = { x: probeX, y: probeY };
 
   const forehead = detectedFace && faceLandmarks![10] ? faceLandmarks![10] : { x: 0.5, y: 0.21 };
   const nose = detectedFace && faceLandmarks![1] ? faceLandmarks![1] : { x: 0.5, y: 0.35 };
@@ -163,92 +165,117 @@ function scoreArticulationZone(
 
   const faceHeight = Math.max(0.14, Math.abs(chin.y - forehead.y));
   const faceWidth = Math.max(0.12, Math.abs(rightCheek.x - leftCheek.x));
-
-  const thumbTip = geo.landmarks[4] || handPt;
+  const horizScale = detectedFace ? faceWidth * 1.25 : faceWidth * 1.85;
 
   if (zone === 'neutral_space') {
-    const inX = probeX >= 0.18 && probeX <= 0.82;
-    const inY = probeY >= chin.y - 0.15 * faceHeight && probeY <= chin.y + 1.85 * faceHeight;
-    if (inX && inY) return { score: 0.94, detectedFace };
-    return { score: 0.35, detectedFace };
+    const minX = 0.08;
+    const maxX = 0.92;
+    const minY = detectedFace ? chin.y - 0.35 * faceHeight : 0.08;
+    const maxY = detectedFace ? Math.min(0.98, chin.y + 2.4 * faceHeight) : 0.96;
+
+    const outX = probeX < minX ? minX - probeX : probeX > maxX ? probeX - maxX : 0;
+    const outY = probeY < minY ? minY - probeY : probeY > maxY ? probeY - maxY : 0;
+    const outDist = Math.hypot(outX / 0.16, outY / 0.18);
+    if (outDist === 0) return { score: 0.96, detectedFace };
+    return { score: clamp01(0.94 - outDist * 0.45), detectedFace };
   }
 
   if (zone === 'shoulder') {
-    const dx = Math.abs(probeX - nose.x);
-    const minLateral = faceWidth * 0.48;
-    const maxLateral = faceWidth * 1.85;
-    const lateralScore =
-      dx >= minLateral && dx <= maxLateral
-        ? 1
-        : dx < minLateral
-        ? clamp01(1 - (minLateral - dx) / (faceWidth * 0.45))
-        : clamp01(1 - (dx - maxLateral) / (faceWidth * 0.55));
+    const minLateral = faceWidth * 0.28;
+    const maxLateral = faceWidth * 2.35;
+    const minY = forehead.y - 0.22 * faceHeight;
+    const maxY = chin.y + 1.15 * faceHeight;
 
-    const minY = forehead.y - 0.05 * faceHeight;
-    const maxY = chin.y + 0.85 * faceHeight;
-    const vertScore =
-      probeY >= minY && probeY <= maxY
-        ? 1
-        : probeY < minY
-        ? clamp01(1 - (minY - probeY) / (faceHeight * 0.5))
-        : clamp01(1 - (probeY - maxY) / (faceHeight * 0.55));
+    const bestScore = Math.max(
+      ...[probePt, handPt].map((pt) => {
+        const dx = Math.abs(pt.x - nose.x);
+        const lateralScore = !detectedFace
+          ? 0.9
+          : dx >= minLateral && dx <= maxLateral
+          ? 1
+          : dx < minLateral
+          ? clamp01(1 - (minLateral - dx) / (faceWidth * 0.65))
+          : clamp01(1 - (dx - maxLateral) / (faceWidth * 0.85));
 
-    return { score: clamp01(lateralScore * 0.55 + vertScore * 0.45), detectedFace };
+        const vertScore =
+          pt.y >= minY && pt.y <= maxY
+            ? 1
+            : pt.y < minY
+            ? clamp01(1 - (minY - pt.y) / (faceHeight * 0.72))
+            : clamp01(1 - (pt.y - maxY) / (faceHeight * 0.78));
+
+        return clamp01(lateralScore * 0.45 + vertScore * 0.55);
+      })
+    );
+
+    return { score: bestScore, detectedFace };
   }
 
   if (zone === 'chest') {
-    const targetPt = { x: nose.x, y: chin.y + faceHeight * 0.95 };
-    const dx = Math.abs(probeX - targetPt.x) / (faceWidth * 0.95);
-    const dy = Math.abs(probeY - targetPt.y) / (faceHeight * 0.72);
-    const dist = Math.hypot(dx, dy);
-    return { score: clamp01(1.05 - Math.max(0, dist - 0.15) * 0.88), detectedFace };
+    const targetPt = { x: nose.x, y: chin.y + faceHeight * 0.85 };
+    const bestDist = Math.min(
+      ...[probePt, handPt, wristPt].map((pt) => {
+        const dx = Math.abs(pt.x - targetPt.x) / (horizScale * 1.15);
+        const dy = Math.abs(pt.y - targetPt.y) / (faceHeight * 0.95);
+        return Math.hypot(dx, dy);
+      })
+    );
+    return { score: clamp01(1.06 - Math.max(0, bestDist - 0.26) * 0.68), detectedFace };
   }
 
   if (zone === 'ear') {
-    const dLeft = dist2D({ x: probeX, y: probeY }, leftCheek);
-    const dRight = dist2D({ x: probeX, y: probeY }, rightCheek);
-    const minDist = Math.min(dLeft, dRight) / Math.max(faceHeight, faceWidth);
-    return { score: clamp01(1.05 - Math.max(0, minDist - 0.15) * 0.95), detectedFace };
+    const leftEarPt = { x: leftCheek.x - faceWidth * 0.16, y: nose.y };
+    const rightEarPt = { x: rightCheek.x + faceWidth * 0.16, y: nose.y };
+    const candidates = [probePt, handPt, indexTip, middleTip, thumbTip];
+    const minDist = Math.min(
+      ...candidates.flatMap((pt) => [
+        dist2D(pt, leftCheek) / Math.max(faceHeight, faceWidth),
+        dist2D(pt, rightCheek) / Math.max(faceHeight, faceWidth),
+        dist2D(pt, leftEarPt) / Math.max(faceHeight, faceWidth),
+        dist2D(pt, rightEarPt) / Math.max(faceHeight, faceWidth)
+      ])
+    );
+    return { score: clamp01(1.06 - Math.max(0, minDist - 0.28) * 0.66), detectedFace };
   }
 
   if (zone === 'eye_cheek') {
-    const anchorL = { x: nose.x - faceWidth * 0.34, y: nose.y };
-    const anchorR = { x: nose.x + faceWidth * 0.34, y: nose.y };
+    const anchorL = { x: nose.x - faceWidth * 0.36, y: nose.y };
+    const anchorR = { x: nose.x + faceWidth * 0.36, y: nose.y };
+    const candidates = [probePt, handPt, indexTip, middleTip, thumbTip];
     const minDist = Math.min(
-      dist2D({ x: probeX, y: probeY }, anchorL),
-      dist2D({ x: probeX, y: probeY }, anchorR)
-    ) / faceHeight;
-    return { score: clamp01(1.05 - Math.max(0, minDist - 0.15) * 0.95), detectedFace };
+      ...candidates.flatMap((pt) => [
+        dist2D(pt, anchorL) / faceHeight,
+        dist2D(pt, anchorR) / faceHeight
+      ])
+    );
+    return { score: clamp01(1.06 - Math.max(0, minDist - 0.28) * 0.66), detectedFace };
   }
 
   let anchor = chin;
-  let tolerance = faceHeight * 0.40;
-  const candidatePoints = [{ x: probeX, y: probeY }, handPt];
+  let tolerance = faceHeight * 0.54;
+  const candidatePoints = [probePt, handPt, indexTip, middleTip, thumbTip];
 
   if (zone === 'forehead') {
     anchor = forehead;
-    tolerance = faceHeight * 0.46;
-    candidatePoints.push(indexTip, middleTip);
+    tolerance = faceHeight * 0.44;
   } else if (zone === 'nose_mouth') {
     anchor = { x: (nose.x + mouth.x) * 0.5, y: (nose.y + mouth.y) * 0.5 };
-    tolerance = faceHeight * 0.42;
-    candidatePoints.push(indexTip, thumbTip);
+    tolerance = faceHeight * 0.52;
   } else if (zone === 'chin') {
-    anchor = { x: chin.x, y: (mouth.y + chin.y) * 0.5 };
-    tolerance = faceHeight * 0.38;
-    candidatePoints.push(thumbTip);
+    anchor = { x: chin.x, y: (mouth.y + chin.y) * 0.52 };
+    tolerance = faceHeight * 0.54;
   }
 
   const bestNormalizedDist = Math.min(
     ...candidatePoints.map((pt) => {
-      const dx = (pt.x - anchor.x) / (faceWidth * 0.78);
+      const dx = (pt.x - anchor.x) / horizScale;
       const dy = (pt.y - anchor.y) / tolerance;
       return Math.hypot(dx, dy);
     })
   );
 
   return {
-    score: clamp01(1.06 - Math.max(0, bestNormalizedDist - 0.20) * 0.80),
+    score: clamp01(1.06 - Math.max(0, bestNormalizedDist - 0.22) * 0.82),
     detectedFace
   };
 }
@@ -530,17 +557,17 @@ export function evaluateSingleTargetSign(params: {
   const isDynamicMotion = target.motionType !== 'static' && target.motionType !== 'tap';
 
   let overall = hasExplicitNmf
-    ? bestHandshape * 0.44 + bestLocation * 0.28 + stability * 0.16 + nmfEval.score * 0.12
-    : bestHandshape * 0.48 + bestLocation * 0.32 + stability * 0.20;
+    ? bestHandshape * 0.47 + bestLocation * 0.25 + stability * 0.16 + nmfEval.score * 0.12
+    : bestHandshape * 0.52 + bestLocation * 0.26 + stability * 0.22;
 
   // Guardrails: reject wrong handshape, wrong location, or frozen hand on dynamic signs
-  if (bestHandshape < 0.66) {
-    overall = Math.min(overall, 0.62);
+  if (bestHandshape < 0.62) {
+    overall = Math.min(overall, 0.60);
   }
-  if (bestLocation < 0.58) {
+  if (bestLocation < 0.56) {
     overall = Math.min(overall, 0.64);
   }
-  if (isDynamicMotion && stability < 0.52) {
+  if (isDynamicMotion && stability < 0.48) {
     overall = Math.min(overall, 0.58);
   }
 
@@ -549,15 +576,15 @@ export function evaluateSingleTargetSign(params: {
 
   let tip = 'Excelente! Mantenha o sinal por um instante.';
   if (!passed) {
-    if (bestHandshape < 0.78) {
+    if (bestHandshape < 0.74) {
       tip = bestFingerTip || 'Ajuste a configuração dos dedos conforme o modelo.';
-    } else if (bestLocation < 0.74) {
+    } else if (bestLocation < 0.68) {
       tip = getZoneTip(target.articulationZone);
-    } else if (isDynamicMotion && stability < 0.72) {
+    } else if (isDynamicMotion && stability < 0.68) {
       tip = getDynamicMotionTip(target.motionType);
-    } else if (hasExplicitNmf && nmfEval.score < 0.76 && nmfEval.tip) {
+    } else if (hasExplicitNmf && nmfEval.score < 0.74 && nmfEval.tip) {
       tip = nmfEval.tip;
-    } else if (stability < 0.72) {
+    } else if (stability < 0.68) {
       tip = getDynamicMotionTip(target.motionType);
     } else {
       tip = 'Quase lá! Ajuste levemente a posição da mão.';

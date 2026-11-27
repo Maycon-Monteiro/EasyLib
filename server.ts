@@ -234,13 +234,17 @@ async function deliverPushNotification(
     return { ok: true };
   } catch (err: any) {
     const statusCode = err?.statusCode;
-    console.warn("[push] falha ao entregar notificação:", statusCode || err?.message);
+    const bodyDetail = typeof err?.body === "string" ? err.body.slice(0, 160) : "";
+    console.warn("[push] falha ao entregar notificação:", statusCode || err?.message, bodyDetail);
     if (statusCode === 404 || statusCode === 410) {
       subscriptionStore.delete(entry.subscription.endpoint);
       persistSubscriptionsToDisk();
       return { ok: false, gone: true, error: "Assinatura expirada" };
     }
-    return { ok: false, error: err?.message || "Falha no envio push" };
+    return {
+      ok: false,
+      error: statusCode ? `Push relay retornou HTTP ${statusCode}` : err?.message || "Falha no envio push",
+    };
   }
 }
 
@@ -279,18 +283,20 @@ setInterval(async () => {
       nowTotalMin >= targetTotalMin;
 
     if (shouldSendDailyAtHour || shouldSendInactivityTier) {
-      entry.lastSentDayKey = dayKey;
-      if (tier !== null) {
-        entry.lastInactivityTierSent = tier;
-      }
-      persistSubscriptionsToDisk();
       const picked = pickRandomExtremeNotificationServer();
-      await deliverPushNotification(entry, {
+      const delivery = await deliverPushNotification(entry, {
         title: picked.titulo,
         body: picked.corpo,
         url: "/",
         tag: tier ? `easylib-inactivity-${tier}h-${dayKey}` : `easylib-daily-${dayKey}`,
       });
+      if (delivery.ok) {
+        entry.lastSentDayKey = dayKey;
+        if (tier !== null) {
+          entry.lastInactivityTierSent = tier;
+        }
+        persistSubscriptionsToDisk();
+      }
     }
   }
 }, 30_000);
@@ -370,6 +376,13 @@ app.post("/api/push/subscribe", (req, res) => {
       : Date.now();
 
   const existing = subscriptionStore.get(subscription.endpoint);
+  const scheduleChanged =
+    !existing ||
+    existing.reminderEnabled !== Boolean(reminderEnabled) ||
+    existing.reminderHour !== safeHour ||
+    existing.reminderMinute !== safeMinute ||
+    existing.timezoneOffsetMinutes !== safeTz;
+
   const record: StoredPushSubscription = {
     subscription: {
       endpoint: subscription.endpoint,
@@ -385,7 +398,7 @@ app.post("/api/push/subscribe", (req, res) => {
     reminderHour: safeHour,
     reminderMinute: safeMinute,
     timezoneOffsetMinutes: safeTz,
-    lastSentDayKey: existing?.lastSentDayKey,
+    lastSentDayKey: scheduleChanged ? undefined : existing?.lastSentDayKey,
     ultimoAcessoAt: safeLastAccess,
     lastInactivityTierSent: null,
     updatedAt: Date.now(),

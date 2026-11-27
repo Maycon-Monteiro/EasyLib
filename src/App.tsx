@@ -35,6 +35,8 @@ import { storageService } from './services/storage';
 import { AppTheme, getStoredTheme, toggleStoredTheme } from './services/themeService';
 import {
   loadPushReminderSettings,
+  showLocalBrowserNotification,
+  startLocalReminderMonitor,
   subscribeToBackgroundPush,
   syncLastAccessToPushServer
 } from './services/pushNotificationService';
@@ -109,11 +111,12 @@ export default function App() {
     storageService.saveUserProfile(userProfile);
   }, [userProfile]);
 
-  // Update last access timestamp on app open
+  // Update last access timestamp on app open & run local daily reminder scheduler
   useEffect(() => {
     const touched = storageService.touchLastAccess();
     setUserProfile(touched);
     syncLastAccessToPushServer(null).catch(() => undefined);
+    return startLocalReminderMonitor();
   }, []);
 
   // Listen to foreground FCM messages if supported
@@ -124,24 +127,14 @@ export default function App() {
         return;
       }
       const msg = (payload && typeof payload === 'object' ? payload : {}) as {
+        title?: string;
+        body?: string;
         notification?: { title?: string; body?: string };
         data?: { title?: string; body?: string; url?: string };
       };
-      const title = msg.notification?.title || msg.data?.title || 'EasyLib — Lembrete de Libras';
-      const body = msg.notification?.body || msg.data?.body || 'Hora de praticar seus sinais de hoje!';
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready
-          .then((reg) =>
-            reg.showNotification(title, {
-              body,
-              icon: '/pwa-192x192.png',
-              badge: '/pwa-192x192.png',
-              tag: 'easylib-foreground-fcm',
-              data: { url: msg.data?.url || '/' },
-            })
-          )
-          .catch(() => undefined);
-      }
+      const title = msg.title || msg.notification?.title || msg.data?.title || 'EasyLib — Lembrete de Libras';
+      const body = msg.body || msg.notification?.body || msg.data?.body || 'Hora de praticar seus sinais de hoje!';
+      void showLocalBrowserNotification(title, body, 'easylib-foreground-fcm');
     })
       .then((unsub) => {
         cleanup = unsub;
@@ -206,13 +199,15 @@ export default function App() {
         setUserProfile(syncedProfile);
         storageService.saveUserProfile(syncedProfile);
 
-        // Request/sync push notification permission + FCM token + ultimoAcesso right after verified login
+        // Sync push notification subscription + FCM token + ultimoAcesso when already granted
         syncLastAccessToPushServer(firebaseUser.uid).catch(() => undefined);
+        const savedPushSettings = loadPushReminderSettings();
         if (
           typeof Notification !== 'undefined' &&
-          (Notification.permission === 'default' || Notification.permission === 'granted')
+          Notification.permission === 'granted' &&
+          savedPushSettings.reminderEnabled
         ) {
-          subscribeToBackgroundPush(loadPushReminderSettings(), firebaseUser.uid)
+          subscribeToBackgroundPush(savedPushSettings, firebaseUser.uid)
             .then(({ fcmToken }) => {
               if (cancelled) return;
               saveFcmTokenAndLastAccess(firebaseUser, fcmToken).catch(() => undefined);
